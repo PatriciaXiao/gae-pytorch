@@ -9,9 +9,9 @@ import scipy.sparse as sp
 import torch
 from torch import optim
 
-from gae.model import GCNModelVAE
-from gae.optimizer import loss_function
-from gae.utils import load_data, mask_test_edges, preprocess_graph, get_roc_score
+from model import GCNModelVAE
+from optimizer import loss_function
+from utils import load_data, mask_test_edges, preprocess_graph, get_roc_score
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', type=str, default='gcn_vae', help="models used")
@@ -57,6 +57,7 @@ def gae_for(args):
         model.train()
         optimizer.zero_grad()
         recovered, mu, logvar = model(features, adj_norm)
+        pos_weight = torch.Tensor([pos_weight])
         loss = loss_function(preds=recovered, labels=adj_label,
                              mu=mu, logvar=logvar, n_nodes=n_nodes,
                              norm=norm, pos_weight=pos_weight)
