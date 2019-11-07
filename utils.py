@@ -12,8 +12,8 @@ def myload(dataset="my"):
     df = pd.read_csv("data/{}.tsv".format(dataset), sep="\t", header=None)
     # print(len(df[0]), len(df[1]))
     # print(list(df[2]))
-    myfrom = list(df[0])[:1000]
-    myto = list(df[1])[:1000]
+    myfrom = list(df[0])
+    myto = list(df[1])
     allx = list(set(myfrom).union(set(myto)))
     n_nodes = len(allx)
     allid = list(range(n_nodes))
