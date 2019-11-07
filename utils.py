@@ -7,7 +7,7 @@ import torch
 from sklearn.metrics import roc_auc_score, average_precision_score
 
 
-def load_data(dataset):
+def load_data(dataset, featureless=True):
     # load the data: x, tx, allx, graph
     names = ['x', 'tx', 'allx', 'graph']
     objects = []
@@ -36,10 +36,22 @@ def load_data(dataset):
         tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))
         tx_extended[test_idx_range - min(test_idx_range), :] = tx
         tx = tx_extended
+    # featureless = True
+    if featureless:
+        # print(test_idx_range) # list of 1000 elements
+        # print(len(test_idx_range_full))
+        # print(len(test_idx_reorder)) # 1000
+        # exit(0)
+        n_entities = 2708
+        edge_indexs = np.array(range(n_entities))
+        features = sp.csr_matrix((np.ones(n_entities), (edge_indexs, edge_indexs)), shape=(n_entities, n_entities), dtype=np.float32)
+        features = normalize(features)
+        features = sparse_mx_to_torch_sparse_tensor(features)
+    else:
+        features = sp.vstack((allx, tx)).tolil()
+        features[test_idx_reorder, :] = features[test_idx_range, :]
+        features = torch.FloatTensor(np.array(features.todense()))
 
-    features = sp.vstack((allx, tx)).tolil()
-    features[test_idx_reorder, :] = features[test_idx_range, :]
-    features = torch.FloatTensor(np.array(features.todense()))
     adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
 
     # print(adj, features)
@@ -52,6 +64,15 @@ def load_data(dataset):
     # 
 
     return adj, features
+
+def normalize(mx):
+    """Row-normalize sparse matrix"""
+    rowsum = np.array(mx.sum(1))
+    r_inv = np.power(rowsum, -1).flatten()
+    r_inv[np.isinf(r_inv)] = 0.
+    r_mat_inv = sp.diags(r_inv)
+    mx = r_mat_inv.dot(mx)
+    return mx
 
 
 def parse_index_file(filename):

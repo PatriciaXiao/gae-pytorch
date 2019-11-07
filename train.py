@@ -16,8 +16,8 @@ from utils import load_data, mask_test_edges, preprocess_graph, get_roc_score
 def gae_for(args):
     print("Using {} dataset".format(args.dataset_str))
     adj, features = load_data(args.dataset_str)
-    print(type(features))
-    exit(0)
+    # print(features)
+    # exit(0)
     n_nodes, feat_dim = features.shape
 
     # Store original adjacency matrix (without diagonal entries) for later
