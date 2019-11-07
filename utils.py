@@ -8,12 +8,15 @@ from sklearn.metrics import roc_auc_score, average_precision_score
 
 import pandas as pd
 
-def myload(dataset="my"):
+def myload(dataset="my", debug=True):
     df = pd.read_csv("data/{}.tsv".format(dataset), sep="\t", header=None)
     # print(len(df[0]), len(df[1]))
     # print(list(df[2]))
     myfrom = list(df[0])
     myto = list(df[1])
+    if debug:
+        myfrom = myfrom[:200]
+        myto = myto[:200]
     allx = list(set(myfrom).union(set(myto)))
     n_nodes = len(allx)
     allid = list(range(n_nodes))
@@ -119,17 +122,21 @@ def sparse_to_tuple(sparse_mx):
     return coords, values, shape
 
 
-def mask_test_edges(adj):
+def mask_test_edges(adj, verbose=True):
     # Function to build test set with 10% positive links
     # NOTE: Splits are randomized and results might slightly deviate from reported numbers in the paper.
     # TODO: Clean up.
 
     # Remove diagonal elements
+    if verbose:
+        print("Remove diagonal elements")
     adj = adj - sp.dia_matrix((adj.diagonal()[np.newaxis, :], [0]), shape=adj.shape)
     adj.eliminate_zeros()
     # Check that diag is zero:
     assert np.diag(adj.todense()).sum() == 0
 
+    if verbose:
+        print("Remove the testing links")
     adj_triu = sp.triu(adj)
     adj_tuple = sparse_to_tuple(adj_triu)
     edges = adj_tuple[0]
@@ -149,12 +156,18 @@ def mask_test_edges(adj):
         rows_close = np.all(np.round(a - b[:, None], tol) == 0, axis=-1)
         return np.any(rows_close)
 
+    if verbose:
+        print("Do negative sampling of the test links")
     test_edges_false = []
     while len(test_edges_false) < len(test_edges):
+        # if verbose:
+        #     print("generating from and to")
         idx_i = np.random.randint(0, adj.shape[0])
         idx_j = np.random.randint(0, adj.shape[0])
         if idx_i == idx_j:
             continue
+        # if verbose:
+        #     print("checking if not really negative")
         if ismember([idx_i, idx_j], edges_all):
             continue
         if test_edges_false:
@@ -164,6 +177,8 @@ def mask_test_edges(adj):
                 continue
         test_edges_false.append([idx_i, idx_j])
 
+    if verbose:
+        print("Do negative sampling of the validation links")
     val_edges_false = []
     while len(val_edges_false) < len(val_edges):
         idx_i = np.random.randint(0, adj.shape[0])
