@@ -16,3 +16,7 @@ The code in this repo is based on or refers to https://github.com/tkipf/gae, htt
 ```bash
 python train.py
 ```
+### in my case
+```bash
+python train.py -d my
+```

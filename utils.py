@@ -6,53 +6,81 @@ import scipy.sparse as sp
 import torch
 from sklearn.metrics import roc_auc_score, average_precision_score
 
+import pandas as pd
+
+def myload(dataset="my"):
+    df = pd.read_csv("data/{}.tsv".format(dataset), sep="\t", header=None)
+    # print(len(df[0]), len(df[1]))
+    # print(list(df[2]))
+    myfrom = list(df[0])[:1000]
+    myto = list(df[1])[:1000]
+    allx = list(set(myfrom).union(set(myto)))
+    n_nodes = len(allx)
+    allid = list(range(n_nodes))
+    allx_map = dict(zip(allx, allid))
+    graph = dict(zip(allid, [[]] * n_nodes))
+    for f, t in zip(myfrom, myto):
+        fid = allx_map[f]
+        tid = allx_map[t]
+        graph[fid].append(tid)
+    return graph
 
 def load_data(dataset, featureless=True):
     # load the data: x, tx, allx, graph
     names = ['x', 'tx', 'allx', 'graph']
-    objects = []
-    for i in range(len(names)):
-        '''
-        fix Pickle incompatibility of numpy arrays between Python 2 and 3
-        https://stackoverflow.com/questions/11305790/pickle-incompatibility-of-numpy-arrays-between-python-2-and-3
-        '''
-        with open("data/ind.{}.{}".format(dataset, names[i]), 'rb') as rf:
-            u = pkl._Unpickler(rf)
-            u.encoding = 'latin1'
-            cur_data = u.load()
-            objects.append(cur_data)
-        # objects.append(
-        #     pkl.load(open("data/ind.{}.{}".format(dataset, names[i]), 'rb')))
-    x, tx, allx, graph = tuple(objects)
-    test_idx_reorder = parse_index_file(
-        "data/ind.{}.test.index".format(dataset))
-    test_idx_range = np.sort(test_idx_reorder)
+    nofeature_dataset = ['my']
+    featured_dataset = ['cora', 'citeseer']
+    if dataset in featured_dataset:
+        objects = []
+        for i in range(len(names)):
+            '''
+            fix Pickle incompatibility of numpy arrays between Python 2 and 3
+            https://stackoverflow.com/questions/11305790/pickle-incompatibility-of-numpy-arrays-between-python-2-and-3
+            '''
+            with open("data/ind.{}.{}".format(dataset, names[i]), 'rb') as rf:
+                u = pkl._Unpickler(rf)
+                u.encoding = 'latin1'
+                cur_data = u.load()
+                objects.append(cur_data)
+            # objects.append(
+            #     pkl.load(open("data/ind.{}.{}".format(dataset, names[i]), 'rb')))
+        x, tx, allx, graph = tuple(objects)
+        test_idx_reorder = parse_index_file(
+            "data/ind.{}.test.index".format(dataset))
+        test_idx_range = np.sort(test_idx_reorder)
 
-    if dataset == 'citeseer':
-        # Fix citeseer dataset (there are some isolated nodes in the graph)
-        # Find isolated nodes, add them as zero-vecs into the right position
-        test_idx_range_full = range(
-            min(test_idx_reorder), max(test_idx_reorder) + 1)
-        tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))
-        tx_extended[test_idx_range - min(test_idx_range), :] = tx
-        tx = tx_extended
-    # featureless = True
-    if featureless:
+        if dataset == 'citeseer':
+            # Fix citeseer dataset (there are some isolated nodes in the graph)
+            # Find isolated nodes, add them as zero-vecs into the right position
+            test_idx_range_full = range(
+                min(test_idx_reorder), max(test_idx_reorder) + 1)
+            tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))
+            tx_extended[test_idx_range - min(test_idx_range), :] = tx
+            tx = tx_extended
+    else:
+        graph = myload(dataset)
+        print("finished loading the graph")
+    # get the features
+    if featureless or (dataset in nofeature_dataset):
         # print(test_idx_range) # list of 1000 elements
         # print(len(test_idx_range_full))
         # print(len(test_idx_reorder)) # 1000
         # exit(0)
-        n_entities = 2708
+        n_entities = len(graph.keys())
         edge_indexs = np.array(range(n_entities))
         features = sp.csr_matrix((np.ones(n_entities), (edge_indexs, edge_indexs)), shape=(n_entities, n_entities), dtype=np.float32)
         features = normalize(features)
         features = sparse_mx_to_torch_sparse_tensor(features)
-    else:
+        print("finished preparing the features")
+    elif dataset in featured_dataset:
         features = sp.vstack((allx, tx)).tolil()
         features[test_idx_reorder, :] = features[test_idx_range, :]
         features = torch.FloatTensor(np.array(features.todense()))
 
+    # graph: {2707: [598, 165, 1473, 2706]}
     adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
+    print("finished preparing the adjacency matrix")
+    # print(adj.toarray()[-1,598])
 
     # print(adj, features)
     # adj:

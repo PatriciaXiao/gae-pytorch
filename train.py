@@ -21,6 +21,7 @@ def gae_for(args):
     n_nodes, feat_dim = features.shape
 
     # Store original adjacency matrix (without diagonal entries) for later
+    print("Store original adjacency matrix (without diagonal entries) for later...")
     adj_orig = adj
     adj_orig = adj_orig - sp.dia_matrix((adj_orig.diagonal()[np.newaxis, :], [0]), shape=adj_orig.shape)
     adj_orig.eliminate_zeros()
@@ -29,6 +30,7 @@ def gae_for(args):
     adj = adj_train
 
     # Some preprocessing
+    print("Some preprocessing...")
     adj_norm = preprocess_graph(adj)
     adj_label = adj_train + sp.eye(adj_train.shape[0])
     # adj_label = sparse_to_tuple(adj_label)
@@ -78,7 +80,7 @@ if __name__ == '__main__':
     parser.add_argument('--hidden2', type=int, default=16, help='Number of units in hidden layer 2.')
     parser.add_argument('--lr', type=float, default=0.01, help='Initial learning rate.')
     parser.add_argument('--dropout', type=float, default=0., help='Dropout rate (1 - keep probability).')
-    parser.add_argument('--dataset-str', type=str, default='cora', help='type of dataset.')
+    parser.add_argument('-d', '--dataset-str', type=str, default='cora', help='type of dataset.')
 
     args = parser.parse_args()
     gae_for(args)
