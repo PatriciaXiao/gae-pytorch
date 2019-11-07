@@ -45,8 +45,11 @@ def load_data(dataset):
     # print(adj, features)
     # adj:
     #   (id1, id2, 1)
+    # features:
+    #   2D tensor
     #   scipy.sparse.csr.csr_matrix # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html
     # print(adj.toarray())
+    # 
 
     return adj, features
 
