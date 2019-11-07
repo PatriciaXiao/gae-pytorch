@@ -19,6 +19,7 @@ def gae_for(args):
     # print(features)
     # exit(0)
     n_nodes, feat_dim = features.shape
+    print("#nodes={}".format(n_nodes))
 
     # Store original adjacency matrix (without diagonal entries) for later
     print("Store original adjacency matrix (without diagonal entries) for later...")
