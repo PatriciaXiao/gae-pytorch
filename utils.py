@@ -42,6 +42,12 @@ def load_data(dataset):
     features = torch.FloatTensor(np.array(features.todense()))
     adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
 
+    # print(adj, features)
+    # adj:
+    #   (id1, id2, 1)
+    #   scipy.sparse.csr.csr_matrix # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html
+    # print(adj.toarray())
+
     return adj, features
 
 
